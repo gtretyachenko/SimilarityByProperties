@@ -92,15 +92,17 @@ if __name__ == "__main__":
     # df = pd.DataFrame(date_base.query_all(sql, param))
 
     row = ['1', '2', '3', '4']
-    sales = {'name': ['Ваыва', 'erfwefw', 'asdasdasd', 'asdasdsad'],
-            'items_sold': [23, 43, 55, 65],
-            'new_clients': [10, 20, 30, 40]
+    sales = {'Proper': ['erfwefw', 'erfwefw', 'asdasdasd', 'asdasdsad'],
             }
     df = pd.DataFrame(data=sales, index=row)
 
     def get_ratio(row, str):
-        name = row['name']
+        name = row['Proper']
         return fuzz.token_sort_ratio(name, str)
+    str = 'erfw'
 
-    res = df[df.apply(get_ratio, axis=1, str='dasd') > 60]
-    print(res)
+    s = []
+
+    df.insert(1, 'ratio', df.apply(get_ratio, axis=1, str=str))
+    df.insert(2, 'str', str)
+    print(df[df['ratio'] > 10])
