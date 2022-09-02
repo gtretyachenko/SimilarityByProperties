@@ -6,6 +6,7 @@ import os
 import pymysql as sql
 import pandas as pd
 import numpy as np
+import re
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 
@@ -65,6 +66,7 @@ class MySqlConnector(object):
 
     def __init__(self, env=None):
         cf = ConfigConnector()
+        self.headers = []
         if not env:
             sec = 'db_{0}'.format(env)
             self.db_host = cf.get_settings('mysql', 'host')
@@ -81,49 +83,112 @@ class MySqlConnector(object):
         try:
             if params:
                 cursor.execute(query, params)
+                self.headers = [i[0] for i in cursor.description]
             else:
                 cursor.execute(query)
+                self.headers = [i[0] for i in cursor.description]
             result = cursor.fetchall()
         finally:
             cursor.close()
         return result
 
 
+def get_ratio(row, str_compare, col):
+    name_to = row[str(col)]
+    return fuzz.token_sort_ratio(str(name_to), str(str_compare))
+
+
 def start_procedure():
-    columns_compare = ('SeasonCode', 'Collor', 'Material')
-    df_result = pd.DataFrame()
-    date_base = MySqlConnector()
-    cols = ', '.join(columns_compare)
-    sql = f'SELECT {cols} FROM dim_products'
+    columns_filter = ['SeasonCode', 'Sex', 'Lining', 'TradeMark', 'CategoryGoods']
+    columns_compare1 = ['ArticleA', 'GroupA', 'LineA', 'LineStyleA', 'ModelsA',
+                        'GroupA', 'GoodsNameA'
+                        ]
+    columns_compare2 = ['StyleCode', 'ArticleManufacturer', 'Spoilage', 'Top', 'BackclothType',
+                        'ZipType', 'HeelType', 'ToeType', 'Height', 'HeelHeight', 'HeelHightMm',
+                        'Details', 'Heel', 'CodeCollor', 'CodeCollorInt', 'Line', 'Material', 'Material2',
+                        'MaterialCollor', 'Models', 'ManufactureName', 'GoodsName', 'SubLine', 'Sole', 'Sex',
+                        'Manufacture', 'LeatherType', 'FabricStructure', 'FabricStructureRus', 'SoleConnection',
+                        'Insole', 'Collor', 'Collor2', 'CollorRus', 'CollorRusAdd', 'Article', 'ManufactureTipycal',
+                        'BaseModelGrID', 'Style'
+                        ]
+    goods_id = ['GrID_from', 'GrID_to', 'TotalRatio']
+    count_columns = len(columns_compare1) + len(columns_compare2) + len(goods_id) + len(columns_filter)
+    columns_compare = columns_compare1 + columns_compare2
+
+    connect = MySqlConnector()
+    sql = f'SELECT * FROM dim_products LIMIT 1000'
     param = ''
     if len(param) > 0:
-        # df = pd.DataFrame({'GrID': ['123456', '321654', '789654'],
-        #                     'SeasonCode': ['231d', '231', '231'],
-        #                    'Color': ['asdasd', 'asdasd', 'asdsad'],
-        #                    'Material': ['asdsada', 'qweqweqw', 'dasdsada']
-        #                    })
-        df = pd.DataFrame(date_base.query_all(sql, param))
+        df = pd.DataFrame(connect.query_all(sql, param))
     else:
-        # df = pd.DataFrame({'GrID': ['123456', '321654', '789654'],
-        #                     'SeasonCode': ['231d', '231', '231d'],
-        #                    'Color': ['asdasd', 'asdasd', 'asdsad'],
-        #                    'Material': ['asdsada', 'qweqweqw', 'dasdasdas']
-        #                    })
-        df = pd.DataFrame(date_base.query_all(sql), columns=columns_compare)
+        df = pd.DataFrame(connect.query_all(sql))
+    df.columns = connect.headers
 
-    df_goods_compare = df[df['SeasonCode'] == '231d']
-    df_result['GrID', 'SeasonCode', 'BaseGrID']  = [df_goods_compare['GrID'], df_goods_compare['SeasonCode'], df_goods_compare['GrID']]
-    for col in columns_compare:
-        df_goods_compare.apply(get_ratio, axis=1, str=col)
-        df['str'] = str
-        print(df[df['ratio'] > 10])
+    season_codes = df[['SeasonCode']]
+    season_codes.fillna(value=np.nan, inplace=True)
+    season_codes.dropna(inplace=True)
+    season_codes = season_codes.drop_duplicates()
+    season_codes['SeasonCodeNum'] = season_codes['SeasonCode'].map(lambda x: re.sub("\D", "", x))
+    season_codes = season_codes.drop_duplicates()
+    season_codes.sort_values(by='SeasonCodeNum')
+    season_codes = season_codes[['SeasonCode']]
 
+    trade_mark = df[['TradeMark']]
+    trade_mark.fillna(value=np.nan, inplace=True)
+    trade_mark.dropna(inplace=True)
+    trade_mark.drop_duplicates()
+    trade_mark.sort_values(by='TradeMark')
 
-def get_ratio(row, str):
-    name = row['Proper']
-    return fuzz.token_sort_ratio(name, str)
+    sex_goods = df[['Sex']]
+    sex_goods.fillna(value=np.nan, inplace=True)
+    sex_goods.dropna(inplace=True)
+    sex_goods.drop_duplicates()
+    sex_goods.sort_values(by='Sex')
+
+    category_goods = df[['CategoryGoods']]
+    category_goods.fillna(value=np.nan, inplace=True)
+    category_goods.dropna(inplace=True)
+    category_goods.drop_duplicates()
+    category_goods.sort_values(by='CategoryGoods')
+
+    lining_goods = df[['Lining']]
+    lining_goods.fillna(value=np.nan, inplace=True)
+    lining_goods.dropna(inplace=True)
+    lining_goods.drop_duplicates()
+    lining_goods.sort_values(by='Sex')
+
+    total_columns = columns_filter + goods_id + columns_compare1 + columns_compare2
+    df_result = pd.DataFrame()
+    res_row = ""
+    df_result.columns = total_columns
+
+    for s_cod in season_codes.iteritems():
+        df_goods_from = df[df['SeasonCode'] == str(s_cod)]
+        df_goods_to = df[df['SeasonCode'] != str(s_cod)]
+        for tm in trade_mark.iteritems():
+            df_goods_from = df_goods_from[df_goods_from['TradeMark'] == str(tm)]
+            df_goods_to = df_goods_to[df_goods_to['TradeMark'] == str(tm)]
+            for sex in sex_goods.iteritems():
+                df_goods_from = df_goods_from[df_goods_from['Sex'] == str(sex)]
+                df_goods_to = df_goods_to[df_goods_to['Sex'] == str(tm)]
+                for ctg in category_goods.iteritems():
+                    df_goods_from = df_goods_from[df_goods_from['CategoryGoods'] == str(ctg)]
+                    df_goods_to = df_goods_to[df_goods_to['CategoryGoods'] == str(ctg)]
+                    for lig in lining_goods.iteritems():
+                        df_goods_from = df_goods_from[df_goods_from['Lining'] == str(lig)]
+                        df_goods_to = df_goods_to[df_goods_to['Lining'] == str(lig)]
+                        for row_from in df_goods_from.iterrows():
+                            for row_to in df_goods_to.iterrows():
+                                if len(res_row) > 1:
+                                    res_row['TotalRatio'] = sum(res_row[:, columns_compare2[0]:columns_compare2[-1]])
+                                    df_result.append(res_row)
+                                res_row = {key: '-1' for key in total_columns}
+                                res_row['GrID_from'] = row_from['GrID_from']
+                                res_row['GrID_to'] = row_from['GrID_to']
+                                for col_name in columns_compare:
+                                    res_row[col_name] = row_to.apply(get_ratio, axis=1,
+                                                                     str=row_from[col_name], col=col_name)
 
 
 if __name__ == "__main__":
     start_procedure()
-
