@@ -128,61 +128,65 @@ def start_procedure():
     season_codes.fillna(value=np.nan, inplace=True)
     season_codes.dropna(inplace=True)
     season_codes = season_codes.drop_duplicates()
-    season_codes['SeasonCodeNum'] = season_codes['SeasonCode'].map(lambda x: re.sub("\D", "", x))
+    season_codes['SeasonCodeNum'] = season_codes['SeasonCode'].map(lambda x: re.sub(r"\D", "", x))
     season_codes = season_codes.drop_duplicates()
-    season_codes.sort_values(by='SeasonCodeNum')
+
+    season_codes.astype({'SeasonCodeNum': int})
+    season_codes['SeasonCodeNum'] = pd.to_numeric(season_codes['SeasonCodeNum'])
+    season_codes = season_codes.sort_values(by='SeasonCodeNum', ascending=False)
     season_codes = season_codes[['SeasonCode']]
 
     trade_mark = df[['TradeMark']]
     trade_mark.fillna(value=np.nan, inplace=True)
     trade_mark.dropna(inplace=True)
-    trade_mark.drop_duplicates()
+    trade_mark = trade_mark.drop_duplicates()
     trade_mark.sort_values(by='TradeMark')
 
     sex_goods = df[['Sex']]
     sex_goods.fillna(value=np.nan, inplace=True)
     sex_goods.dropna(inplace=True)
-    sex_goods.drop_duplicates()
+    sex_goods = sex_goods.drop_duplicates()
     sex_goods.sort_values(by='Sex')
 
     category_goods = df[['CategoryGoods']]
     category_goods.fillna(value=np.nan, inplace=True)
     category_goods.dropna(inplace=True)
-    category_goods.drop_duplicates()
+    category_goods = category_goods.drop_duplicates()
     category_goods.sort_values(by='CategoryGoods')
 
     lining_goods = df[['Lining']]
     lining_goods.fillna(value=np.nan, inplace=True)
     lining_goods.dropna(inplace=True)
-    lining_goods.drop_duplicates()
-    lining_goods.sort_values(by='Sex')
+    lining_goods = lining_goods.drop_duplicates()
+    lining_goods.sort_values(by='Lining')
 
     total_columns = columns_filter + goods_id + columns_compare1 + columns_compare2
     df_result = pd.DataFrame()
-    res_row = ""
-    df_result.columns = total_columns
 
-    for s_cod in season_codes.iteritems():
-        df_goods_from = df[df['SeasonCode'] == str(s_cod)]
-        df_goods_to = df[df['SeasonCode'] != str(s_cod)]
-        for tm in trade_mark.iteritems():
-            df_goods_from = df_goods_from[df_goods_from['TradeMark'] == str(tm)]
-            df_goods_to = df_goods_to[df_goods_to['TradeMark'] == str(tm)]
-            for sex in sex_goods.iteritems():
-                df_goods_from = df_goods_from[df_goods_from['Sex'] == str(sex)]
-                df_goods_to = df_goods_to[df_goods_to['Sex'] == str(tm)]
-                for ctg in category_goods.iteritems():
-                    df_goods_from = df_goods_from[df_goods_from['CategoryGoods'] == str(ctg)]
-                    df_goods_to = df_goods_to[df_goods_to['CategoryGoods'] == str(ctg)]
-                    for lig in lining_goods.iteritems():
-                        df_goods_from = df_goods_from[df_goods_from['Lining'] == str(lig)]
-                        df_goods_to = df_goods_to[df_goods_to['Lining'] == str(lig)]
+    for s_cod in season_codes['SeasonCode'].iteritems():
+        df_goods_from = df[df['SeasonCode'] == str(s_cod[1])]
+        df_goods_to = df[df['SeasonCode'] != str(s_cod[1])]
+        for tm in trade_mark['TradeMark'].iteritems():
+            df_goods_from = df_goods_from[df_goods_from['TradeMark'] == str(tm[1])]
+            df_goods_to = df_goods_to[df_goods_to['TradeMark'] == str(tm[1])]
+            for sex in sex_goods['Sex'].iteritems():
+                df_goods_from = df_goods_from[df_goods_from['Sex'] == str(sex[1])]
+                df_goods_to = df_goods_to[df_goods_to['Sex'] == str(tm[1])]
+                for ctg in category_goods['CategoryGoods'].iteritems():
+                    df_goods_from = df_goods_from[df_goods_from['CategoryGoods'] == str(ctg[1])]
+                    df_goods_to = df_goods_to[df_goods_to['CategoryGoods'] == str(ctg[1])]
+                    for lig in lining_goods['Lining'].iteritems():
+                        df_goods_from = df_goods_from[df_goods_from['Lining'] == str(lig[1])]
+                        df_goods_to = df_goods_to[df_goods_to['Lining'] == str(lig[1])]
                         for row_from in df_goods_from.iterrows():
                             for row_to in df_goods_to.iterrows():
-                                if len(res_row) > 1:
+                                print('начинаем сверять')
+                                if len(res_row) == 0:
+                                    res_row = {key: '-1' for key in total_columns}
+                                else:
                                     res_row['TotalRatio'] = sum(res_row[:, columns_compare2[0]:columns_compare2[-1]])
-                                    df_result.append(res_row)
-                                res_row = {key: '-1' for key in total_columns}
+                                    df_result = df_result.append(res_row, ignore_index=True)
+                                    res_row = {key: '-1' for key in total_columns}
                                 res_row['GrID_from'] = row_from['GrID_from']
                                 res_row['GrID_to'] = row_from['GrID_to']
                                 for col_name in columns_compare:
