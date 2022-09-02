@@ -116,7 +116,7 @@ def start_procedure():
     columns_compare = columns_compare1 + columns_compare2
 
     connect = MySqlConnector()
-    sql = f'SELECT * FROM dim_products LIMIT 1000'
+    sql = f'SELECT * FROM dim_products'
     param = ''
     if len(param) > 0:
         df = pd.DataFrame(connect.query_all(sql, param))
@@ -163,19 +163,19 @@ def start_procedure():
     total_columns = columns_filter + goods_id + columns_compare1 + columns_compare2
     df_result = pd.DataFrame()
 
-    for s_cod in season_codes['SeasonCode'].iteritems():
+    for s_cod in season_codes.loc[:, ('SeasonCode')].iteritems():
         df_goods_from = df[df['SeasonCode'] == str(s_cod[1])]
         df_goods_to = df[df['SeasonCode'] != str(s_cod[1])]
-        for tm in trade_mark['TradeMark'].iteritems():
+        for tm in trade_mark.loc[:, ('TradeMark')].iteritems():
             df_goods_from = df_goods_from[df_goods_from['TradeMark'] == str(tm[1])]
             df_goods_to = df_goods_to[df_goods_to['TradeMark'] == str(tm[1])]
-            for sex in sex_goods['Sex'].iteritems():
+            for sex in sex_goods.loc[:, ('Sex')].iteritems():
                 df_goods_from = df_goods_from[df_goods_from['Sex'] == str(sex[1])]
                 df_goods_to = df_goods_to[df_goods_to['Sex'] == str(tm[1])]
-                for ctg in category_goods['CategoryGoods'].iteritems():
+                for ctg in category_goods.loc[:, ('CategoryGoods')].iteritems():
                     df_goods_from = df_goods_from[df_goods_from['CategoryGoods'] == str(ctg[1])]
                     df_goods_to = df_goods_to[df_goods_to['CategoryGoods'] == str(ctg[1])]
-                    for lig in lining_goods['Lining'].iteritems():
+                    for lig in lining_goods.loc[:, ('Lining')].iteritems():
                         df_goods_from = df_goods_from[df_goods_from['Lining'] == str(lig[1])]
                         df_goods_to = df_goods_to[df_goods_to['Lining'] == str(lig[1])]
                         for row_from in df_goods_from.iterrows():
@@ -192,7 +192,7 @@ def start_procedure():
                                 for col_name in columns_compare:
                                     res_row[col_name] = row_to.apply(get_ratio, axis=1,
                                                                      str=row_from[col_name], col=col_name)
-
+    print('Конец!')
 
 if __name__ == "__main__":
     start_procedure()
