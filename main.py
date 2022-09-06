@@ -111,10 +111,8 @@ class StoregeData():
         if df_from.shape[0] == 0 or df_to.shape[0] == 0:
             print('----------------------Cтоп! Данные в хранилище пустые----------------------\n')
             sys.exit()
-        if StoregeData.storege1 + StoregeData.storege1 == 0:
-            pass
-        StoregeData.storege1 = df_from.copy()
-        StoregeData.storege2 = df_to.copy()
+        self.storege1 = df_from.copy()
+        self.storege2 = df_to.copy()
         print('----------------------Данные сохранены в хранилище!----------------------\n')
 
 
@@ -154,10 +152,7 @@ def start_procedure():
     sql = r'''
         SELECT *
         FROM dim_products
-        WHERE CategoryGoods = "Обувь"
-        AND TradeMark = "Baldinini"
-        AND SeasonCode LIKE "%3"
-        OR SeasonCode LIKE "%2"
+        WHERE CategoryGoods = "Обувь" AND TradeMark = "Baldinini" AND (SeasonCode LIKE "%3" OR SeasonCode LIKE "%2")
         LIMIT 10000    
     '''
     param = ''
@@ -229,8 +224,8 @@ def start_procedure():
             df_goods_from = df_goods_from[df_goods_from['TradeMark'] == str(tm[1])]
             df_goods_to = df_goods_to[df_goods_to['TradeMark'] == str(tm[1])]
             if df_goods_to.shape[0] == 0 or df_goods_from.shape[0] == 0:
-                df_goods_from = StoregeData.storege1
-                df_goods_to = StoregeData.storege2
+                df_goods_from = store.storege1
+                df_goods_to = store.storege2
                 print('----------------------Данные востановлены из хранилища!----------------------\n')
                 continue
             print('----------------------Применен фильтр торговой марки----------------------\n')
@@ -240,8 +235,8 @@ def start_procedure():
                 df_goods_from = df_goods_from[df_goods_from['Sex'] == str(sex[1])]
                 df_goods_to = df_goods_to[df_goods_to['Sex'] == str(sex[1])]
                 if df_goods_to.shape[0] == 0 or df_goods_from.shape[0] == 0:
-                    df_goods_from = StoregeData.storege1
-                    df_goods_to = StoregeData.storege2
+                    df_goods_from = store.storege1
+                    df_goods_to = store.storege2
                     print('----------------------Данные востановлены из хранилища!----------------------\n')
                     continue
                 print('----------------------Применен фильтр Пол---------------------\n')
@@ -251,8 +246,8 @@ def start_procedure():
                     df_goods_from = df_goods_from[df_goods_from['CategoryGoods'] == str(ctg[1])]
                     df_goods_to = df_goods_to[df_goods_to['CategoryGoods'] == str(ctg[1])]
                     if df_goods_to.shape[0] == 0 or df_goods_from.shape[0] == 0:
-                        df_goods_from = StoregeData.storege1
-                        df_goods_to = StoregeData.storege2
+                        df_goods_from = store.storege1
+                        df_goods_to = store.storege2
                         print('----------------------Данные востановлены из хранилища!----------------------\n')
                         continue
                     print('----------------------Применен фильтр категории----------------------\n')
@@ -262,8 +257,8 @@ def start_procedure():
                         df_goods_from = df_goods_from[df_goods_from['Lining'] == str(lig[1])]
                         df_goods_to = df_goods_to[df_goods_to['Lining'] == str(lig[1])]
                         if df_goods_to.shape[0] == 0 or df_goods_from.shape[0] == 0:
-                            df_goods_from = StoregeData.storege1
-                            df_goods_to = StoregeData.storege2
+                            df_goods_from = store.storege1
+                            df_goods_to = store.storege2
                             print('----------------------Данные востановлены из хранилища!----------------------\n')
                             continue
                         print('----------------------Применен фильтр подложка----------------------\n')
