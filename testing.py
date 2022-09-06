@@ -179,7 +179,7 @@ def start_procedure():
     sql = r'''
         SELECT *
         FROM dim_products
-        WHERE CategoryGoods = "Обувь" AND TradeMark = "Baldinini" 
+        WHERE CategoryGoods = "Обувь" AND TradeMark = "Fabi" 
         AND ((SeasonCode REGEXP "1[8-9][2-3]d" OR SeasonCode REGEXP "2[0-3][2-3]d")
         OR (SeasonCode REGEXP "1[8-9][2-3]$" OR SeasonCode REGEXP "2[0-3][2-3]$"))
         ORDER BY SeasonCode DESC, TradeMark ASC, Sex ASC, Lining ASC    
