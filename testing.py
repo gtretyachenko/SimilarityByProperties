@@ -159,6 +159,7 @@ def all_season(df):
 
 
 def start_procedure():
+    compare_trade_mark = 'Baldinini'
     goods_id = ['GrID_from', 'GrID_to', 'TotalRatio']
     columns_filter = ['SeasonCode', 'Sex', 'Lining', 'TradeMark', 'CategoryGoods']
     columns_compare1 = ['ArticleA', 'GroupA', 'LineA', 'LineStyleA', 'ModelsA',
@@ -176,10 +177,11 @@ def start_procedure():
                         ]
     columns_compare = columns_compare1 + columns_compare2
     connect = MySqlConnector()
-    sql = r'''
+
+    sql = f'''
         SELECT *
         FROM dim_products
-        WHERE CategoryGoods = "Обувь" AND TradeMark = "Fabi" 
+        WHERE CategoryGoods = "Обувь" AND TradeMark = "{compare_trade_mark}" 
         AND ((SeasonCode REGEXP "1[8-9][2-3]d" OR SeasonCode REGEXP "2[0-3][2-3]d")
         OR (SeasonCode REGEXP "1[8-9][2-3]$" OR SeasonCode REGEXP "2[0-3][2-3]$"))
         ORDER BY SeasonCode DESC, TradeMark ASC, Sex ASC, Lining ASC    
@@ -251,8 +253,8 @@ def start_procedure():
         lining_goods = lining_goods[lining_goods['Lining'] != str(lig[1])]
 
     print('Конец! ', f'Выполнено сравнений строк-товаров: {count1}')
-    df_result.to_excel("output.xlsx",
-                 sheet_name='Sheet_name_1')
+    df_result.to_excel(f"output_{compare_trade_mark}.xlsx",
+                 sheet_name='inbound')
 
 
 if __name__ == "__main__":
